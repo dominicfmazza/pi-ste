@@ -1,0 +1,36 @@
+{
+  "name": "pi-ste",
+  "version": "0.1.0",
+  "description": "Simplified Technical English (ASD-STE100) output mode for pi. Removes AI slop and compacts token waste, with a machine-checkable linter.",
+  "keywords": [
+    "pi-package",
+    "ste",
+    "asd-ste100",
+    "simplified-technical-english",
+    "writing",
+    "linter"
+  ],
+  "license": "MIT",
+  "author": "dominicfmazza",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dominicfmazza/pi-ste.git"
+  },
+  "homepage": "https://github.com/dominicfmazza/pi-ste#readme",
+  "bugs": {
+    "url": "https://github.com/dominicfmazza/pi-ste/issues"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": ["./extensions"],
+    "skills": ["./skills"]
+  },
+  "files": [
+    "extensions",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ]
+}
