@@ -13,8 +13,11 @@ and nominalizations. A linter scores each answer, so you can see the slop drop.
   (READMEs, docs, pull-request text). Default is `strict`.
 - Compaction in every mode. It cuts filler, hedges, pleasantries, and repeated
   content, but keeps grammar and articles.
-- A slop linter, `ste-lint.py`. It runs after each answer and posts a score
-  (violations per 100 words) to the transcript.
+- A slop linter, `ste-lint.py`. It scores each answer in violations per
+  100 words.
+- A live status in the footer. The score updates while the answer streams.
+- Hidden feedback to the agent. The next prompt lists each violation and its
+  fix. The transcript does not show it.
 - A `/ste-lint [file]` command. It lints a file, or the last answer.
 
 ## Install
@@ -44,19 +47,34 @@ The linter needs `python3` on your PATH.
 
 ## How it works
 
-- The extension adds an STE workflow to the system prompt every turn while on.
-  The model drafts an answer, checks it against the rules, corrects each
-  violation, then returns the clean text.
-- The `message_end` hook runs `ste-lint.py` on each finished answer and posts
-  the score. A non-zero score means slop leaked. Tighten the next answer.
-- State lives in session entries, so the mode survives `/reload` and resume.
+- While STE mode is on, the extension adds an `ste_mode` section to the
+  system prompt. The model writes a draft, checks it against the rules,
+  corrects each violation, and returns the clean text.
+- While an answer streams, the extension lints the text about once a second.
+  The footer status shows the result:
+
+  | Status | Meaning |
+  |---|---|
+  | `ste strict …` | The answer has too few words to lint. |
+  | `ste strict 3 (1.2/100w) live` | The answer streams. It has 3 violations so far. |
+  | `ste strict ✓` | The last answer has no violations. |
+  | `ste strict 3 (1.2/100w)` | The last answer has 3 violations. |
+  | `ste strict lint unavailable` | The linter did not run. Install `python3`. |
+
+- When the agent run ends, the extension lints all answer text of the run.
+  Thinking text and tool calls are not part of it.
+- If the run has violations, the next prompt carries a hidden `ste-feedback`
+  message. It quotes each violation and gives the fix. The agent reads it.
+  The transcript does not show it.
+- The extension keeps the mode in session entries. The mode stays after
+  `/reload` and after a resume.
 
 ## Modes
 
-- **strict** — apply every rule and both length caps. One instruction per
+- **strict**: apply every rule and both length caps. One instruction per
   sentence. Max 20 words.
-- **flavored** — apply the sentence, paragraph, active-voice, and phrasal-verb
-  discipline. Relax the ~900-word dictionary so prose reads naturally.
+- **flavored**: apply the sentence, paragraph, active-voice, and phrasal-verb
+  rules. Relax the ~900-word dictionary, so the prose reads naturally.
 
 ## Scope
 

@@ -36,9 +36,12 @@ Default mode: **strict**. Switch: `/ste strict|flavored`.
 3. **Correct** — rewrite each violation with the plain form.
 4. **Answer** — return only the corrected text.
 
-The extension runs `ste-lint.py` on the finalized answer and reports the score
-(violations per 100 words). Lower is cleaner. A non-zero score means slop
-leaked — tighten the next response.
+The extension lints each answer with `ste-lint.py`. The footer shows the
+score live.
+
+When an answer has violations, the next prompt carries a hidden
+`ste-feedback` message. The message quotes each violation and gives the fix.
+Apply each fix in the next answer. Do not tell the user about the message.
 
 ## Rules
 
@@ -130,11 +133,13 @@ Example:
 ## Run the linter directly
 
 ```
-python3 ~/.pi/agent/skills/ste/ste-lint.py your-draft.md
+python3 <skill-dir>/ste-lint.py your-draft.md
 ```
 
-Score is violations per 100 words. Lower is cleaner. Lint a draft, apply the
-skill, then lint it again. The delta between the two scores is the signal.
+`<skill-dir>` is the directory of this file. The score is violations per 100
+words. A lower score is better.
+
+With no file, the script reads stdin and prints JSON. The `examples` list quotes each violation and gives the fix.
 
 ## Boundaries
 

@@ -47,6 +47,38 @@ def count_ci(text, phrases):
             n += 1; hits.append(ph)
     return n, hits
 
+def examples(text, sents, limit=8):
+    """Show the text behind each violation, so a writer can fix it."""
+    out = []
+    def add(rule, found, fix):
+        if len(out) < limit:
+            out.append({"rule": rule, "text": found.strip()[:120], "fix": fix})
+    for s in sents:
+        n = wc(s)
+        if n > 20:
+            add("long_sentence(>20w)", s, f"Split this {n}-word sentence.")
+    for s in sents:
+        if ";" in s:
+            add("semicolon", s, "Write two sentences.")
+    for m in re.finditer(r"\b\w+['’](?:t|re|ve|ll|d|s|m)\b", text):
+        add("contraction", m.group(0), "Write the full form.")
+    for m in re.finditer(rf"\b{BE}\s+(?:\w+ed|{PP_IRREG})\b", text, re.I):
+        add("passive_voice", m.group(0), "Name the actor. Use the active voice.")
+    for m in re.finditer(rf"\b{BE}\s+\w+ing\b", text, re.I):
+        add("ing_main_verb", m.group(0), "Use the simple tense.")
+    for m in re.finditer(r"\b(?:perform(?:s|ed)?|conduct(?:s|ed)?|provide(?:s|d)?|carry out|carries out|make use of|makes use of)\b|\b\w{4,}(?:tion|ment|ance|ence)\s+of\b", text, re.I):
+        add("nominalization", m.group(0), "Use the verb.")
+    for rule, phrases, fix in (
+        ("phrasal_verb", PHRASAL, "Use a single verb."),
+        ("banned_word", BANNED, "Use the short common word."),
+        ("marketing_adjective", MARKETING, "Delete it, or state a fact."),
+        ("modal_hedge", MODAL_HEDGE, "Delete the lead-in."),
+    ):
+        _, hits = count_ci(text, phrases)
+        for h in dict.fromkeys(hits):
+            add(rule, h, fix)
+    return out
+
 def lint(text):
     raw = text
     text = strip_code(text)
@@ -68,7 +100,6 @@ def lint(text):
     v["long_paragraph(>6s)"] = sum(1 for p in paras if len(sentences(strip_code(p))) > 6)
     em = raw.count("—") + raw.count("–")
     total = sum(v.values())
-    per100 = {k: round(x*100.0/words, 2) for k, x in v.items()}
     return {
         "words": words, "sentences": len(sents),
         "violations": v, "total": total,
@@ -77,6 +108,7 @@ def lint(text):
         "longest_sentence_words": (max(longs)[0] if longs else max((wc(s) for s in sents), default=0)),
         "sample_marketing": list(dict.fromkeys(mh))[:6],
         "sample_banned": list(dict.fromkeys(bh))[:6],
+        "examples": examples(text, sents) if total else [],
     }
 
 if __name__ == "__main__":
